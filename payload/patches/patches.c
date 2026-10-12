@@ -124,3 +124,12 @@ PATCH_CALL(OSOS_RESOURCE_NEXT_TEMPLATE_CALL, OSOS_RESOURCE_NEXT, cfw_next_templa
 /* Report the non-European volume policy without changing SysInfo. */
 /* and r0, r0, #1 -> mov r0, #0 */
 PATCH_WORD(OSOS_REGIONAL_VOLUME_RESULT_WORD, 0xe2000001, 0xe3a00000);
+
+/* Play Next and Play Last for albums and artists */
+PATCH_CALL(OSOS_ALBUMS_CANCEL_APPEND_CALL, OSOS_CONTEXT_MENU_APPEND,
+           cfw_selection_menu_cancel);
+PATCH_CALL(OSOS_ARTISTS_CANCEL_APPEND_CALL, OSOS_CONTEXT_MENU_APPEND,
+           cfw_selection_menu_cancel);
+/* Albums, Artists and other library lists share this dispatcher. */
+PATCH_JUMP(OSOS_MEDIA_LIST_ACTION_ENTRY, 0xe92d41f0, 0xe1a07001, cfw_media_list_action);
+PATCH_CALL(OSOS_MEDIA_LIST_OTG_ADD_CALL, OSOS_OTG_ADD_BROWSER, cfw_queue_selection);
