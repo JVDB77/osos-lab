@@ -129,8 +129,8 @@ new file mode 100644
 +}
 +
 +/* Apple USB can expose the region after the firmware partition as a disk.
-+ * Accept only one FAT32 partition in that inner MBR, within the outer data
-+ * region, and only if exactly one sector-unit interpretation validates. */
++ * Accept only one FAT32 partition after that MBR and within physical capacity,
++ * and only if exactly one sector-unit interpretation validates. */
 +static bool ipod_nested_find(const uint8_t *outer, uint64_t total,
 +                             ipod_nested_read read_sector, void *context,
 +                             struct ipod_nested_partition *result, uint8_t *bpb)
@@ -186,8 +186,8 @@ new file mode 100644
 +        uint32_t relative = nested_u32(entry + 8), count = nested_u32(entry + 12);
 +        uint64_t start = base + (uint64_t)relative * mult;
 +        uint64_t end = start + (uint64_t)count * mult;
-+        if (!relative || !count || start < (uint64_t)nested_u32(data + 8) * mult ||
-+            end > data_end * mult || read_sector(context, start, mult, true, boot) ||
++        if (!relative || !count || start < base + mult ||
++            end > total || end > UINT32_MAX || read_sector(context, start, mult, true, boot) ||
 +            !nested_fat32(boot, mult, relative, count))
 +            continue;
 +        if (++found > 1)

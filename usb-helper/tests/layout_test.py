@@ -487,6 +487,37 @@ unsigned rejected_partition(void) { return layout.failed_partition; }
         self.assertTrue(self.discover_map(sectors))
         self.assertEqual(self.lib.selected_start(), 394224)
 
+    def test_issue4_inner_partition_before_old_data_start(self):
+        # Captured partition tables; the missing FAT32 header is synthetic.
+        for relative, count, capacity, accepted in [
+            (2, 31167935, 249737216, True),
+            (1, 31167935, 249737216, True),
+            (0, 31167935, 249737216, False),
+            (2, 31167937, 249737216, False),
+            (2, 31167935, 249737215, False),
+        ]:
+            with self.subTest(relative=relative, count=count, capacity=capacity):
+                sectors = self.nested_image()
+                struct.pack_into("<II", sectors[0], 454, 49278, 31167873)
+                struct.pack_into("<II", sectors[393720], 454, relative, count)
+                bpb = sectors.pop(395768)
+                struct.pack_into("<III", bpb, 28, relative, count, 4000)
+                start = 393720 + relative * 8
+                if relative:
+                    sectors[start] = bpb
+                self.assertEqual(self.discover_map(sectors, capacity), accepted)
+                lbas = (ctypes.c_uint32 * len(sectors))(*sectors)
+                self.assertEqual(
+                    bool(self.lib.mount_map(
+                        lbas, b"".join(sectors.values()), len(sectors), capacity, 0
+                    )),
+                    accepted,
+                )
+                if accepted:
+                    self.assertEqual(self.lib.selected_start(), start)
+                    self.assertEqual(self.lib.selected_end(), start + count * 8)
+                    self.assertEqual(self.lib.selected_bytes(), 4096)
+
     def test_nested_rejects_bad_tables_geometry_and_bounds(self):
         mutations = [
             (0, 466, b"\x83"),  # no firmware partition
@@ -495,7 +526,6 @@ unsigned rejected_partition(void) { return layout.failed_partition; }
             (393720, 466, b"\x0c"),  # additional inner entry
             (393720, 450, b"\xee"),  # GPT protective table
             (393720, 454, struct.pack("<I", 0)),
-            (393720, 454, struct.pack("<I", 1)),  # before outer data
             (393720, 458, struct.pack("<I", 0xFFFFFFFF)),
             (393720, 510, bytes(2)),
             (395768, 11, struct.pack("<H", 512)),
