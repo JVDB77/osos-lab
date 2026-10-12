@@ -508,9 +508,11 @@ unsigned rejected_partition(void) { return layout.failed_partition; }
                 self.assertEqual(self.discover_map(sectors, capacity), accepted)
                 lbas = (ctypes.c_uint32 * len(sectors))(*sectors)
                 self.assertEqual(
-                    bool(self.lib.mount_map(
-                        lbas, b"".join(sectors.values()), len(sectors), capacity, 0
-                    )),
+                    bool(
+                        self.lib.mount_map(
+                            lbas, b"".join(sectors.values()), len(sectors), capacity, 0
+                        )
+                    ),
                     accepted,
                 )
                 if accepted:
