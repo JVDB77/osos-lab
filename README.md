@@ -41,7 +41,7 @@ RepriseOS package and builds a companion using that iPod's identity.
 ## Features
 
 - Three-band custom EQ with adjustable filter types, frequency, gain, Q and precut.
-- Play Next and Play Last from song context menus.
+- Play Next and Play Last from song, album and artist context menus.
 - EU volume limit removal for European iPods.
 - Song Info from song and Now Playing context menus.
 - Album Artists browsing with Artist fallback and configurable menu visibility.

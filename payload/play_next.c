@@ -89,3 +89,51 @@ void cfw_play_next_add(struct osos_player *player, struct osos_media_item *selec
         }
     }
 }
+
+void cfw_play_next_add_browser(struct osos_player *player, void *browser, int last)
+{
+    typedef struct osos_media_list *(*current_list)(void *);
+    typedef uint32_t (*build_songs)(void *);
+    typedef int (*order_mode)(void *);
+    typedef struct osos_media_entry *(*get_entry)(void *, int, uint32_t, uint32_t);
+    typedef int (*matches)(void *, struct osos_media_entry *, void *);
+
+    struct osos_media_entry *current = current_entry(player);
+    if (!current || !browser)
+        return;
+    struct osos_media_list *source = ((current_list)OSOS_BROWSER_CURRENT_LIST)(browser);
+    if (!source || !osos_list_root(source))
+        return;
+    /* Same song list and order as the native On-The-Go path for this selection. */
+    ((build_songs)OSOS_BROWSER_BUILD_SONGS)(browser);
+    int mode = osos_list_is_shuffled(source) ? 2 : ((order_mode)OSOS_BROWSER_ORDER_MODE)(browser);
+    uint32_t grouped = *((uint8_t *)browser + OSOS_BROWSER_ORDER_FLAG_OFFSET) != 0;
+    unsigned count = osos_list_root(source)->tracks;
+
+    osos_player_stop_artwork(player);
+    int inserted = 0;
+    for (unsigned i = 0; i < count; i++) {
+        /* Play Next inserts each song directly after the current one, so walk backwards. */
+        unsigned index = last ? i : count - 1 - i;
+        struct osos_media_entry *entry =
+            ((get_entry)OSOS_LIST_ORDER_ENTRY)(source, mode, grouped, index);
+        if (!entry || !entry->song.record ||
+            !((matches)OSOS_BROWSER_FILTER)(browser, entry, source))
+            continue;
+        struct osos_media_list *queue = player->playback.list;
+        if (osos_list_root(queue)->tracks >= UINT16_MAX - 1)
+            break;
+        /* Each insertion invalidates the shuffle index; rebuild it from the ranks and
+           revalidate before insert_song walks it again. */
+        if (osos_list_is_shuffled(queue))
+            ((get_entry)OSOS_LIST_ORDER_ENTRY)(queue, 2, 0, 0);
+        current = current_entry(player);
+        if (!current)
+            break;
+        if (insert_song(player, entry, current, last))
+            inserted = 1;
+    }
+    osos_player_rebuild_artwork(player);
+    if (inserted)
+        invalidate_next(player);
+}
