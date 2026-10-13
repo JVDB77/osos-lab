@@ -32,6 +32,7 @@ class PayloadTests(unittest.TestCase):
                 "menu_resources",
                 "bitmap_assets",
                 "dark_mode",
+                "osos_handoff",
             ):
                 with self.subTest(fixture=name):
                     executable = directory / name
