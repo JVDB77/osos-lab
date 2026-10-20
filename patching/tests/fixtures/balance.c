@@ -11,7 +11,9 @@
 #define PATCH_ARM
 
 static uint32_t disk_record;
-static int missing = 1, writes, refreshed = -1, changes;
+static int missing = 1, writes, refreshed = -1, changes, eq_notified;
+
+void cfw_eq_balance_changed(void) { eq_notified++; }
 
 static int file_open(const struct osos_path *path, int mode, void **handle)
 {
@@ -96,7 +98,8 @@ int main(void)
 
     /* Selecting "R 100%" mutes left after the ramp and keeps right intact. */
     assert(cfw_balance_action("CFW_Balance_Set_00_20", 0));
-    assert(writes == 1 && refreshed == 20 && changes == 2);
+    assert(writes == 1 && refreshed == 20 && changes == 2 && eq_notified == 1);
+    assert(cfw_balance_active());
     assert(disk_record == (0x4c414200u | 20));
     fill(buffer, 1024, -32768);
     cfw_balance_apply(buffer, 1024);
@@ -116,6 +119,7 @@ int main(void)
     disk_record = 0x4c414200u | 99;
     cfw_balance_load_preferences();
     assert(selected == 10 && target_left == (1 << 15) && target_right == (1 << 15));
+    assert(!cfw_balance_active());
 
     /* Unrelated actions pass through; support queries are claimed. */
     assert(!cfw_balance_action("CFW_EQ_Open", 0));

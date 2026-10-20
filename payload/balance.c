@@ -2,6 +2,7 @@
 
 #include "balance.h"
 #include "balance_ui.h"
+#include "custom_eq.h"
 #include "osos.h"
 #include "cfw.h"
 #include "preferences.h"
@@ -27,6 +28,11 @@ static void publish(unsigned int index)
     /* Linear attenuation of the opposite channel, like Rockbox's balance. */
     target_left = percent > 0 ? UNITY * (100 - percent) / 100 : UNITY;
     target_right = percent < 0 ? UNITY * (100 + percent) / 100 : UNITY;
+}
+
+int cfw_balance_active(void)
+{
+    return target_left != UNITY || target_right != UNITY;
 }
 
 static void defaults(void)
@@ -71,6 +77,7 @@ int cfw_balance_action(const char *action, uint32_t argument)
         selected = value;
         publish(selected);
         save();
+        cfw_eq_balance_changed();
         osos_menu_item_changed(cfw_balance_fields[field].items[previous]);
         osos_menu_item_changed(cfw_balance_fields[field].items[value]);
     }

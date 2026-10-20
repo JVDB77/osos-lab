@@ -13,6 +13,35 @@ static void *current_state;
 static uint32_t current_generation;
 static uint32_t old_state[OSOS_EQ_STATE_BYTES / 4] __attribute__((aligned(8)));
 static unsigned int fade_remaining;
+/* Balance needs the DSP stage even when the native EQ is Off. */
+static void *balance_state;
+static volatile int balance_forced;
+
+/* Enable the stage with neutral filters; processing then only applies balance. */
+static void force_for_balance(void *state)
+{
+    /* One LSB below unity (-5e-7 dB): inaudible, but leaves the stages' bypass
+     * flags clear in case the native pipeline also skips fully bypassed stages.
+     * cfw_eq_process never runs these filters while forced. */
+    static const int32_t identity[5] = {(1 << 24) - 1, 0, 0, 0, 0};
+    unsigned char *eq = state;
+    if (balance_forced || eq[OSOS_EQ_ENABLED_OFFSET] || !cfw_balance_active())
+        return;
+    for (unsigned int band = 0; band < 3; band++)
+        osos_eq_set_stage(state, band, identity);
+    osos_eq_reset(state);
+    balance_forced = 1;
+    eq[OSOS_EQ_ENABLED_OFFSET] = 1;
+}
+
+void cfw_eq_balance_changed(void)
+{
+    if (!balance_state)
+        return;
+    uint32_t flags = cfw_irq_save();
+    force_for_balance(balance_state);
+    cfw_irq_restore(flags);
+}
 
 int cfw_eq_publish(const uint32_t values[CFW_EQ_FIELDS])
 {
@@ -75,12 +104,18 @@ static int install_coefficients(void *state, int force)
 PATCH_ARM void cfw_eq_load(void *state)
 {
     fade_remaining = 0;
+    balance_state = state;
+    balance_forced = 0;
     if (osos_eq_preset(state) == CFW_EQ_DSP_PRESET) {
         install_coefficients(state, 1);
     } else {
         current_state = 0;
         osos_eq_load(state);
     }
+    /* Native Off leaves the stage disabled; keep it running while balance is set.
+     * Returning to Center keeps the pass-through until the next load, avoiding a
+     * click from dropping the gain ramp mid-way. */
+    force_for_balance(state);
 }
 
 PATCH_ARM void cfw_eq_process(void *state, int16_t *samples, uint32_t frames,
@@ -88,6 +123,10 @@ PATCH_ARM void cfw_eq_process(void *state, int16_t *samples, uint32_t frames,
 {
     *output = samples;
     *output_frames = frames;
+    if (balance_forced && state == balance_state) {
+        cfw_balance_apply(samples, frames);
+        return;
+    }
     if (osos_eq_preset(state) != CFW_EQ_DSP_PRESET) {
         osos_eq_process(state, samples, frames, output, output_frames);
         cfw_balance_apply(*output, *output_frames);

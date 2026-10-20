@@ -14,6 +14,8 @@ int cfw_eq_action(const char *action, uint32_t argument);
 void cfw_eq_load_preferences(void);
 int cfw_eq_publish(const uint32_t values[CFW_EQ_FIELDS]);
 void cfw_eq_load(void *state);
+/* Re-evaluates whether the DSP stage must run for balance while EQ is Off. */
+void cfw_eq_balance_changed(void);
 void cfw_eq_process(void *state, int16_t *samples, uint32_t frames, int16_t **output,
                     uint32_t *output_frames);
 #endif
