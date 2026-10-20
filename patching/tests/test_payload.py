@@ -21,12 +21,17 @@ class PayloadTests(unittest.TestCase):
             directory = Path(temporary)
             generate(
                 Resources(metadata["resources"], bindings),
-                [root / "payload/dark_mode.ui", root / "payload/custom_eq.ui"],
+                [
+                    root / "payload/dark_mode.ui",
+                    root / "payload/custom_eq.ui",
+                    root / "payload/balance.ui",
+                ],
                 directory,
                 "test",
             )
             for name in (
                 "album_artist",
+                "balance",
                 "album_artists_index",
                 "album_artists_menu",
                 "menu_resources",

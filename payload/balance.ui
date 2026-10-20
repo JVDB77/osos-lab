@@ -1,0 +1,33 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<ui>
+  <!-- Negative numbers favor the left channel, positive numbers the right. -->
+  <values id="cfw_balance_values">
+    <value number="-100" label="L 100%"/>
+    <value number="-90" label="L 90%"/>
+    <value number="-80" label="L 80%"/>
+    <value number="-70" label="L 70%"/>
+    <value number="-60" label="L 60%"/>
+    <value number="-50" label="L 50%"/>
+    <value number="-40" label="L 40%"/>
+    <value number="-30" label="L 30%"/>
+    <value number="-20" label="L 20%"/>
+    <value number="-10" label="L 10%"/>
+    <value number="0" label="Center"/>
+    <value number="10" label="R 10%"/>
+    <value number="20" label="R 20%"/>
+    <value number="30" label="R 30%"/>
+    <value number="40" label="R 40%"/>
+    <value number="50" label="R 50%"/>
+    <value number="60" label="R 60%"/>
+    <value number="70" label="R 70%"/>
+    <value number="80" label="R 80%"/>
+    <value number="90" label="R 90%"/>
+    <value number="100" label="R 100%"/>
+  </values>
+
+  <!-- Slot 0 is part of the version-1 saved balance format. -->
+  <menu id="CFW_Balance" title="Balance">
+    <selector id="CFW_Balance_Level" title="Balance" values="cfw_balance_values" slot="0" default="0"/>
+  </menu>
+  <settings-entry menu="CFW_Balance" after="SettingsMenu_ListItem_SoundCheck" open="CFW_Balance_Open"/>
+</ui>

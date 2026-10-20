@@ -154,6 +154,12 @@ int cfw_eq_action(const char *action, uint32_t argument)
     return !strcmp(action, "CFW_EQ_Open");
 }
 
+int cfw_balance_action(const char *action, uint32_t argument)
+{
+    (void)argument;
+    return !strcmp(action, "CFW_Balance_Open");
+}
+
 void cfw_album_artists_menu_adjust_property(uint32_t type, uint32_t property, uintptr_t *out)
 {
     assert(type == OSOS_PROPERTY_COUNT && property == 123 && *out == 5);

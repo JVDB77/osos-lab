@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 
+#include "balance.h"
 #include "custom_eq.h"
 #include "eq_coefficients.h"
 #include "osos.h"
@@ -89,6 +90,7 @@ PATCH_ARM void cfw_eq_process(void *state, int16_t *samples, uint32_t frames,
     *output_frames = frames;
     if (osos_eq_preset(state) != CFW_EQ_DSP_PRESET) {
         osos_eq_process(state, samples, frames, output, output_frames);
+        cfw_balance_apply(*output, *output_frames);
         return;
     }
     if (current_state != state || current_generation != generation) {
@@ -127,4 +129,5 @@ PATCH_ARM void cfw_eq_process(void *state, int16_t *samples, uint32_t frames,
         uint32_t ignored_frames;
         osos_eq_process(state, samples, frames, &ignored, &ignored_frames);
     }
+    cfw_balance_apply(*output, *output_frames);
 }
